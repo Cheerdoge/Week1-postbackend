@@ -30,10 +30,11 @@ func (r *PostRepository) CreatePost(ctx context.Context, title, content, author 
 		Created: now,
 		Updated: now,
 	}
-	_, err := r.col.InsertOne(ctx, p)
+	res, err := r.col.InsertOne(ctx, p)
 	if err != nil {
 		return model.Post{}, err
 	}
+	p.ID = res.InsertedID.(primitive.ObjectID)
 	return p, nil
 }
 
@@ -41,9 +42,9 @@ func (r *PostRepository) UpdatePost(ctx context.Context, id primitive.ObjectID, 
 	now := time.Now()
 	opts := bson.M{
 		"$set": bson.M{
-			"title":   title,
-			"body":    content,
-			"updated": now,
+			"title":     title,
+			"body":      content,
+			"updatedAt": now,
 		},
 	}
 	_, err := r.col.UpdateOne(ctx, bson.M{"_id": id}, opts)
@@ -154,7 +155,7 @@ func (r *PostRepository) DeleteComment(
 	commentID primitive.ObjectID,
 ) error {
 	filter := bson.M{"_id": postID}
-	update := bson.M{"$pull": bson.M{"comments": commentID}}
+	update := bson.M{"$pull": bson.M{"comments": bson.M{"_id": commentID}}}
 	res, err := r.col.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
@@ -173,7 +174,7 @@ func (r *PostRepository) UpdateComment(
 ) error {
 	filter := bson.M{"_id": postID, "comments._id": commentID}
 	update := bson.M{
-		"$push": bson.M{
+		"$set": bson.M{
 			"comments.$.content":   newContent,
 			"comments.$.updatedAt": time.Now().UTC()},
 	}

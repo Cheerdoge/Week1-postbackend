@@ -5,9 +5,9 @@ import (
 	"time"
 	"week1-postbackend/model"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UserRepository struct {
@@ -28,10 +28,11 @@ func (r UserRepository) CreateUser(ctx context.Context, username, email, passwor
 		Password: password,
 		Created:  now,
 	}
-	_, err := r.col.InsertOne(ctx, u)
+	res, err := r.col.InsertOne(ctx, u)
 	if err != nil {
 		return model.User{}, err
 	}
+	u.ID = res.InsertedID.(primitive.ObjectID)
 	return u, nil
 }
 
