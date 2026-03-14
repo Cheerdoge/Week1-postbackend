@@ -20,7 +20,7 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 	}
 }
 
-func (r UserRepository) CreateUser(ctx context.Context, username, email, password string) (model.User, error) {
+func (r *UserRepository) CreateUser(ctx context.Context, username, email, password string) (model.User, error) {
 	now := time.Now()
 	u := model.User{
 		Username: username,
@@ -36,7 +36,7 @@ func (r UserRepository) CreateUser(ctx context.Context, username, email, passwor
 	return u, nil
 }
 
-func (r UserRepository) GetUserByID(ctx context.Context, id primitive.ObjectID) (model.User, error) {
+func (r *UserRepository) GetUserByID(ctx context.Context, id primitive.ObjectID) (model.User, error) {
 	var u model.User
 	err := r.col.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
 	if err != nil {
@@ -45,7 +45,7 @@ func (r UserRepository) GetUserByID(ctx context.Context, id primitive.ObjectID) 
 	return u, nil
 }
 
-func (r UserRepository) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var u model.User
 	err := r.col.FindOne(ctx, bson.M{"email": email}).Decode(&u)
 	if err != nil {

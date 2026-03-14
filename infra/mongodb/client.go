@@ -4,31 +4,33 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func NewMongoClient() (*mongo.Client, error) {
+func NewMongoClient(ctx context.Context) (*mongo.Client, error) {
 	uri := os.Getenv("MONGO_URI")
+	if uri == "" {
+		return nil, fmt.Errorf("MONGO_URI is empty")
+	}
 
-	//配置
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 
-	//连接建立客户端
-	client, err := mongo.Connect(opts)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		fmt.Println("Error connecting to MongoDB,")
 		return nil, err
 	}
-	//验证连接
-	var result bson.M
+
 	if err := client.Database("admin").
-		RunCommand(context.TODO(), bson.D{{"ping", 1}}).
-		Decode(&result); err != nil {
+		RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).
+		Err(); err != nil {
+		_ = client.Disconnect(context.Background())
 		return nil, err
 	}
+
 	return client, nil
 }
