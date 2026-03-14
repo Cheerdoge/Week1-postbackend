@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-
 	"week1-postbackend/handler"
 	"week1-postbackend/infra/mongodb"
 	"week1-postbackend/repository"
@@ -28,19 +27,22 @@ func main() {
 
 	// repo
 	userRepo := repository.NewUserRepository(db)
-	// postRepo := repository.NewPostRepository(db)
+	postRepo := repository.NewPostRepository(db)
 
 	// service
 	userSvc := service.NewUserService(userRepo)
+	postSvc := service.NewPostService(postRepo)
 
 	// handler
 	authHandler := handler.NewAuthHandler(userSvc)
+	postHandler := handler.NewPostHandler(postSvc)
 
 	// router
 	r := router.NewRouter(router.Handlers{
 		Auth: authHandler,
+		Post: postHandler,
 	})
-
+	
 	addr := os.Getenv("ADDR")
 	if addr == "" {
 		addr = ":8080"

@@ -2,7 +2,6 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 func NewMongoClient(ctx context.Context) (*mongo.Client, error) {
 	uri := os.Getenv("MONGO_URI")
 	if uri == "" {
-		return nil, fmt.Errorf("MONGO_URI is empty")
+		uri = "mongodb://localhost:27017"
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)

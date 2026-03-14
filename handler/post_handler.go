@@ -86,7 +86,6 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 }
 
 type UpdatePostRequest struct {
-	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
@@ -97,13 +96,14 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid json"})
 		return
 	}
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
-	defer cancel()
-	oid, err := primitive.ObjectIDFromHex(req.ID)
+	postIDHex := c.Param("postId")
+	oid, err := primitive.ObjectIDFromHex(postIDHex)
 	if err != nil {
-		c.JSON(404, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid postId"})
 		return
 	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
 	err = h.service.UpdatePost(ctx, oid, req.Title, req.Content)
 	if err != nil {
 		c.JSON(404, gin.H{"error": err.Error()})
@@ -124,7 +124,7 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 }
 
 func (h *PostHandler) DeletePost(c *gin.Context) {
-	oid, err := primitive.ObjectIDFromHex(c.Param("pid"))
+	oid, err := primitive.ObjectIDFromHex(c.Param("postId"))
 	if err != nil {
 		c.JSON(404, gin.H{"error": err.Error()})
 	}
@@ -191,12 +191,11 @@ func (h *PostHandler) GetAllPost(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"posts":              postDots,
 		"nextAfterCreatedAt": nextCreatedAt.Format(time.RFC3339),
-		"nextAfterID":        nextID.Hex(),
+		"nextAfterId":        nextID.Hex(),
 	})
 }
 
 type AddCommentToPostRequest struct {
-	PostID  string `json:"postId"`
 	Content string `json:"content"`
 }
 
@@ -209,7 +208,7 @@ func (h *PostHandler) AddCommentToPost(c *gin.Context) {
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
-	oid, err := primitive.ObjectIDFromHex(req.PostID)
+	oid, err := primitive.ObjectIDFromHex(c.Param("postId"))
 	if err != nil {
 		c.JSON(404, gin.H{"error": err.Error()})
 		return
@@ -229,11 +228,11 @@ func (h *PostHandler) AddCommentToPost(c *gin.Context) {
 }
 
 func (h *PostHandler) DeleteComment(c *gin.Context) {
-	poid, err := primitive.ObjectIDFromHex(c.Param("pid"))
+	poid, err := primitive.ObjectIDFromHex(c.Param("postId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
-	coid, err := primitive.ObjectIDFromHex(c.Param("cid"))
+	coid, err := primitive.ObjectIDFromHex(c.Param("commentId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
@@ -255,11 +254,11 @@ type UpdateCommentRequest struct {
 }
 
 func (h *PostHandler) UpdateCommentContent(c *gin.Context) {
-	poid, err := primitive.ObjectIDFromHex(c.Param("pid"))
+	poid, err := primitive.ObjectIDFromHex(c.Param("postId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
-	coid, err := primitive.ObjectIDFromHex(c.Param("cid"))
+	coid, err := primitive.ObjectIDFromHex(c.Param("commentId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
@@ -285,12 +284,12 @@ type RemoveCommentRequest struct {
 
 func (h *PostHandler) ReplyComment(c *gin.Context) {
 	author := c.GetString("username")
-	poid, err := primitive.ObjectIDFromHex(c.Param("pid"))
+	poid, err := primitive.ObjectIDFromHex(c.Param("postId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	coid, err := primitive.ObjectIDFromHex(c.Param("cid"))
+	coid, err := primitive.ObjectIDFromHex(c.Param("commentId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -313,17 +312,17 @@ func (h *PostHandler) ReplyComment(c *gin.Context) {
 }
 
 func (h *PostHandler) DeleteReplyComment(c *gin.Context) {
-	poid, err := primitive.ObjectIDFromHex(c.Param("pid"))
+	poid, err := primitive.ObjectIDFromHex(c.Param("postId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	coid, err := primitive.ObjectIDFromHex(c.Param("cid"))
+	coid, err := primitive.ObjectIDFromHex(c.Param("commentId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	roid, err := primitive.ObjectIDFromHex(c.Param("rid"))
+	roid, err := primitive.ObjectIDFromHex(c.Param("replyId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -344,17 +343,17 @@ type UpdateReplyCommentRequest struct {
 }
 
 func (h *PostHandler) UpdateReplyCommentContent(c *gin.Context) {
-	poid, err := primitive.ObjectIDFromHex(c.Param("pid"))
+	poid, err := primitive.ObjectIDFromHex(c.Param("postId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	coid, err := primitive.ObjectIDFromHex(c.Param("cid"))
+	coid, err := primitive.ObjectIDFromHex(c.Param("commentId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	roid, err := primitive.ObjectIDFromHex(c.Param("rid"))
+	roid, err := primitive.ObjectIDFromHex(c.Param("replyId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
