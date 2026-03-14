@@ -24,11 +24,12 @@ func NewPostRepository(db *mongo.Database) *PostRepository {
 func (r *PostRepository) CreatePost(ctx context.Context, title, content, author string) (model.Post, error) {
 	now := time.Now()
 	p := model.Post{
-		Title:   title,
-		Body:    content,
-		Author:  author,
-		Created: now,
-		Updated: now,
+		Title:    title,
+		Body:     content,
+		Author:   author,
+		Comments: []model.Comment{},
+		Created:  now,
+		Updated:  now,
 	}
 	res, err := r.col.InsertOne(ctx, p)
 	if err != nil {
