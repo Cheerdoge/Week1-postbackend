@@ -195,6 +195,53 @@ func (h *PostHandler) GetAllPost(c *gin.Context) {
 	})
 }
 
+func (h *PostHandler) GetPostByID(c *gin.Context) {
+	oid, err := primitive.ObjectIDFromHex(c.Param("postId"))
+	if err != nil {
+		c.JSON(404, gin.H{"error": err.Error()})
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+	post, err := h.service.GetPostByID(ctx, oid)
+	if err != nil {
+		c.JSON(404, gin.H{"error": err.Error()})
+		return
+	}
+	var commentDTOs []CommentDTO
+	for _, comment := range post.Comments {
+		var replyDTOs []CommentDTO
+		for _, reply := range comment.Comments {
+			r := CommentDTO{
+				ID:      reply.ID.Hex(),
+				Author:  reply.Author,
+				Content: reply.Content,
+				Created: reply.Created,
+				Updated: reply.Updated,
+			}
+			replyDTOs = append(replyDTOs, r)
+		}
+		p := CommentDTO{
+			ID:       comment.ID.Hex(),
+			Author:   comment.Author,
+			Content:  comment.Content,
+			Comments: replyDTOs,
+			Created:  comment.Created,
+			Updated:  comment.Updated,
+		}
+		commentDTOs = append(commentDTOs, p)
+	}
+	c.JSON(200, gin.H{"post": PostDTO{
+		ID:        post.ID.Hex(),
+		Title:     post.Title,
+		Body:      post.Body,
+		Author:    post.Author,
+		Comments:  commentDTOs,
+		CreatedAt: post.Created,
+		UpdatedAt: post.Updated,
+	}})
+}
+
 type AddCommentToPostRequest struct {
 	Content string `json:"content"`
 }

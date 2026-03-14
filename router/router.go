@@ -39,8 +39,9 @@ func NewRouter(h Handlers) *gin.Engine {
 		posts := protected.Group("/posts")
 		{
 			// post CRUD
-			posts.GET("", h.Post.GetAllPost)  // GET /api/v1/posts?limit=&afterCreatedAt=&afterId=
-			posts.POST("", h.Post.CreatePost) // POST /api/v1/posts
+			posts.GET("", h.Post.GetAllPost)          // GET /api/v1/posts?limit=&afterCreatedAt=&afterId=
+			posts.GET("/:postId", h.Post.GetPostByID) // GET /api/v1/posts/{postId}
+			posts.POST("", h.Post.CreatePost)         // POST /api/v1/posts
 			posts.PATCH("/:postId", h.Post.UpdatePost)
 			posts.DELETE("/:postId", h.Post.DeletePost)
 
